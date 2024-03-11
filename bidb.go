@@ -33,6 +33,18 @@ func New[T any]() *DB[T] {
 	return db
 }
 
+// Reset removes all items from the database and resets indexes
+func (db *DB[T]) Reset() {
+	db.mx.Lock()
+	defer db.mx.Unlock()
+
+	db.data = db.data[:0]
+	db.all = db.all[:0]
+	for k := range db.indexes {
+		delete(db.indexes, k)
+	}
+}
+
 // AddBatch adds a batch of items to the database and indexes them
 func (db *DB[T]) AddBatch(items []T, indexes ...int) *DB[T] {
 	db.mx.Lock()
