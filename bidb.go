@@ -96,6 +96,9 @@ func (db *DB[T]) setPos(v []uint64, pos int) []uint64 {
 }
 
 func (db *DB[T]) indexValues(values []uint64) []T {
+	db.mx.RLock()
+	defer db.mx.RUnlock()
+
 	var res []T
 
 	vv := make([]int, 0, 64)
@@ -121,25 +124,26 @@ func (db *DB[T]) indexValues(values []uint64) []T {
 
 // Index returns a result set for the given index
 func (db *DB[T]) Index(index int) *Result[T] {
-	db.mx.RLock()
-	defer db.mx.RUnlock()
+	//db.mx.RLock()
+	//defer db.mx.RUnlock()
 
 	res := db.acquireResult()
-	res.index = append(res.index, db.indexes[index]...)
+	//res.index = append(res.index, db.indexes[index]...)
+	res.startIdx = index
 
 	return res
 }
 
 // All returns a result set for all items in the database
-func (db *DB[T]) All() *Result[T] {
-	db.mx.RLock()
-	defer db.mx.RUnlock()
-
-	res := db.acquireResult()
-	res.index = append(res.index, db.all...)
-
-	return res
-}
+//func (db *DB[T]) All() *Result[T] {
+//	db.mx.RLock()
+//	defer db.mx.RUnlock()
+//
+//	res := db.acquireResult()
+//	res.index = append(res.index, db.all...)
+//
+//	return res
+//}
 
 func (db *DB[T]) acquireResult() *Result[T] {
 	r, ok := db.resultPool.Get().(*Result[T])
