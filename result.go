@@ -1,6 +1,11 @@
 package bidb
 
-// Result is a result of a query
+const (
+	opAnd = iota
+	opOr
+	opAndNot
+)
+
 type Result[T any] struct {
 	startIdx int
 
@@ -9,13 +14,6 @@ type Result[T any] struct {
 
 	db *DB[T]
 }
-
-const (
-	opAnd = iota
-	opOr
-	opAndNot
-	opNot
-)
 
 func (res *Result[T]) And(index int) *Result[T] {
 	res.indexes = append(res.indexes, index)
@@ -35,115 +33,74 @@ func (res *Result[T]) AndNot(index int) *Result[T] {
 	return res
 }
 
-func (res *Result[T]) Not(index int) *Result[T] {
-	res.indexes = append(res.indexes, index)
-	res.ops = append(res.ops, opNot)
-	return res
-}
+func (res *Result[T]) Get(dest []T) []T {
+	if res.db == nil {
+		return nil
+	}
 
-// Get returns the result set
-func (res *Result[T]) Get() []T {
 	res.db.mx.RLock()
+	defer res.db.mx.RUnlock()
 
-	si, ok := res.db.indexes[res.startIdx]
-	if !ok {
+	result, okSI := res.db.indexes[res.startIdx]
+	if !okSI {
 		return nil
 	}
 
 	if len(res.indexes) == 0 {
-		res.db.mx.RUnlock()
-		return res.db.indexValues(si)
+		return res.db.indexValues(result, dest)
 	}
 
 	var idx [][]uint64
 	for _, i := range res.indexes {
-		v, oki := res.db.indexes[i]
-		if !oki {
+		v, ok := res.db.indexes[i]
+		if !ok {
 			return nil
 		}
 		idx = append(idx, v)
 	}
-	res.db.mx.RUnlock()
 
 	for i := 0; i < len(idx); i++ {
 		switch res.ops[i] {
 		case opAnd:
+			var j int
+
 			for {
-				if i >= len(res.index) || i >= len(ai) {
+				if j >= len(result) || j >= len(idx[i]) {
 					break
 				}
 
-				res.index[i] &= ai[i]
-				i++
+				result[j] &= idx[i][j]
+				j++
 			}
 		case opOr:
-			res.or(i)
+			var j int
+
+			for {
+				if j >= len(idx[i]) {
+					break
+				}
+
+				if j >= len(result) {
+					result = append(result, idx[i][j:]...)
+					break
+				}
+
+				result[j] |= idx[i][j]
+				j++
+			}
 		case opAndNot:
-			res.andNot(i)
-		case opNot:
-			res.not()
+			var j int
+
+			for {
+				if j >= len(result) || j >= len(idx[i]) {
+					break
+				}
+
+				result[j] &= ^idx[i][j]
+				j++
+			}
 		}
 	}
 
-	return nil
-}
-
-func (res *Result[T]) and(index int) *Result[T] {
-	var i int
-
-	ai := res.db.indexes[index]
-
-	for {
-		if i >= len(res.index) || i >= len(ai) {
-			break
-		}
-
-		res.index[i] &= ai[i]
-		i++
-	}
-	return res
-}
-
-func (res *Result[T]) or(index int) *Result[T] {
-	var i int
-
-	ai := res.db.indexes[index]
-
-	for {
-		if i >= len(ai) {
-			break
-		}
-
-		if i >= len(res.index) {
-			res.index = append(res.index, ai[i:]...)
-			break
-		}
-
-		res.index[i] |= ai[i]
-		i++
-	}
-	return res
-}
-
-func (res *Result[T]) andNot(index int) *Result[T] {
-	var i int
-
-	ai := res.db.indexes[index]
-
-	for {
-		if i >= len(res.index) || i >= len(ai) {
-			break
-		}
-
-		res.index[i] &= ^ai[i]
-		i++
-	}
-	return res
-}
-
-func (res *Result[T]) not() *Result[T] {
-	for i := range res.index {
-		res.index[i] = ^res.index[i]
-	}
-	return res
+	return res.db.indexValues(result, dest)
 }

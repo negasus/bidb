@@ -37,13 +37,13 @@ func main() {
 
 	resultMaleAdult := db.Index(indexMale).And(indexAdult)
 	defer db.ReleaseResult(resultMaleAdult)
-	fmt.Printf("Male adult:       %v\n", resultMaleAdult.Get())
+	fmt.Printf("Male adult:       %v\n", resultMaleAdult.Get(nil))
 
 	resultFemaleNotAdult := db.Index(indexFemale).AndNot(indexAdult)
 	defer db.ReleaseResult(resultFemaleNotAdult)
-	fmt.Printf("Female not adult: %v\n", resultFemaleNotAdult.Get())
+	fmt.Printf("Female not adult: %v\n", resultFemaleNotAdult.Get(nil))
 
-	resultNotAdult := db.Index(indexAdult).Not()
-	defer db.ReleaseResult(resultNotAdult)
-	fmt.Printf("Not adult:        %v\n", resultNotAdult.Get())
+	// resultNotAdult := db.Index(indexAdult).Not()
+	// defer db.ReleaseResult(resultNotAdult)
+	// fmt.Printf("Not adult:        %v\n", resultNotAdult.Get())
 }

@@ -14,12 +14,9 @@ type index []uint64
 
 // DB is a simple in-memory database
 type DB[T any] struct {
-	mx   sync.RWMutex
-	data []T
-
-	all     index
-	indexes map[int]index
-
+	mx         sync.RWMutex
+	data       []T
+	indexes    map[int]index
 	resultPool sync.Pool
 }
 
@@ -39,7 +36,6 @@ func (db *DB[T]) Reset() {
 	defer db.mx.Unlock()
 
 	db.data = db.data[:0]
-	db.all = db.all[:0]
 	for k := range db.indexes {
 		delete(db.indexes, k)
 	}
@@ -54,7 +50,7 @@ func (db *DB[T]) AddBatch(items []T, indexes ...int) *DB[T] {
 		db.data = append(db.data, item)
 		pos := len(db.data) - 1
 
-		db.all = db.setPos(db.all, pos)
+		db.indexes[0] = db.setPos(db.indexes[0], pos)
 
 		for _, idx := range indexes {
 			db.indexes[idx] = db.setPos(db.indexes[idx], pos)
@@ -72,7 +68,7 @@ func (db *DB[T]) Add(item T, indexes ...int) *DB[T] {
 	db.data = append(db.data, item)
 	pos := len(db.data) - 1
 
-	db.all = db.setPos(db.all, pos)
+	db.indexes[0] = db.setPos(db.indexes[0], pos)
 
 	for _, idx := range indexes {
 		db.indexes[idx] = db.setPos(db.indexes[idx], pos)
@@ -82,8 +78,8 @@ func (db *DB[T]) Add(item T, indexes ...int) *DB[T] {
 }
 
 func (db *DB[T]) setPos(v []uint64, pos int) []uint64 {
-	group := pos / 64
-	if pos%64 == 0 && pos > 0 {
+	group := pos / 63
+	if pos%63 == 0 && pos > 0 {
 		group--
 	}
 
@@ -91,15 +87,19 @@ func (db *DB[T]) setPos(v []uint64, pos int) []uint64 {
 		v = append(v, make([]uint64, group-len(v)+1)...)
 	}
 
-	v[group] |= 1 << (pos - group*64)
+	shift := pos
+	if group > 0 {
+		shift -= group*63 + 1
+	}
+
+	v[group] |= 1 << shift
+
 	return v
 }
 
-func (db *DB[T]) indexValues(values []uint64) []T {
+func (db *DB[T]) indexValues(values []uint64, dest []T) []T {
 	db.mx.RLock()
 	defer db.mx.RUnlock()
-
-	var res []T
 
 	vv := make([]int, 0, 64)
 
@@ -114,43 +114,33 @@ func (db *DB[T]) indexValues(values []uint64) []T {
 			if elIdx >= len(db.data) {
 				break
 			}
-			res = append(res, db.data[elIdx])
+			dest = append(dest, db.data[elIdx])
 		}
 		vv = vv[:0]
 	}
 
-	return res
+	return dest
 }
 
-// Index returns a result set for the given index
 func (db *DB[T]) Index(index int) *Result[T] {
-	//db.mx.RLock()
-	//defer db.mx.RUnlock()
-
 	res := db.acquireResult()
-	//res.index = append(res.index, db.indexes[index]...)
 	res.startIdx = index
 
 	return res
 }
 
-// All returns a result set for all items in the database
-//func (db *DB[T]) All() *Result[T] {
-//	db.mx.RLock()
-//	defer db.mx.RUnlock()
-//
-//	res := db.acquireResult()
-//	res.index = append(res.index, db.all...)
-//
-//	return res
-//}
+func (db *DB[T]) All() *Result[T] {
+	res := db.acquireResult()
+	res.startIdx = 0
+
+	return res
+}
 
 func (db *DB[T]) acquireResult() *Result[T] {
 	r, ok := db.resultPool.Get().(*Result[T])
 	if !ok {
 		r = &Result[T]{
-			index: make([]uint64, 0, 16),
-			db:    db,
+			db: db,
 		}
 	}
 
@@ -159,7 +149,9 @@ func (db *DB[T]) acquireResult() *Result[T] {
 
 // ReleaseResult releases a result set
 func (db *DB[T]) ReleaseResult(res *Result[T]) {
-	res.index = res.index[:0]
+	res.startIdx = 0
+	res.ops = res.ops[:0]
+	res.indexes = res.indexes[:0]
 	db.resultPool.Put(res)
 }
 

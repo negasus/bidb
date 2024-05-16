@@ -18,8 +18,8 @@ func TestAdd(t *testing.T) {
 		t.Errorf("Expected 1, got %d", db.data[0].ID)
 	}
 
-	if len(db.indexes) != 1 {
-		t.Errorf("Expected 1, got %d", len(db.indexes))
+	if len(db.indexes) != 2 {
+		t.Errorf("Expected 2, got %d", len(db.indexes))
 	}
 
 	if len(db.indexes[1]) != 1 {
@@ -30,12 +30,12 @@ func TestAdd(t *testing.T) {
 		t.Errorf("Expected 1, got %d", db.indexes[1][0])
 	}
 
-	if len(db.all) != 1 {
-		t.Errorf("Expected 1, got %d", len(db.all))
+	if len(db.indexes[0]) != 1 {
+		t.Errorf("Expected 1, got %d", len(db.indexes[0]))
 	}
 
-	if db.all[0] != 1 {
-		t.Errorf("Expected 1, got %d", db.all[0])
+	if db.indexes[0][0] != 1 {
+		t.Errorf("Expected 1, got %d", db.indexes[0][0])
 	}
 
 }
@@ -56,8 +56,8 @@ func TestAddBatch(t *testing.T) {
 		t.Errorf("Expected 2, got %d", db.data[1].ID)
 	}
 
-	if len(db.indexes) != 1 {
-		t.Errorf("Expected 1, got %d", len(db.indexes))
+	if len(db.indexes) != 2 {
+		t.Errorf("Expected 2, got %d", len(db.indexes))
 	}
 
 	if len(db.indexes[1]) != 1 {
@@ -68,12 +68,12 @@ func TestAddBatch(t *testing.T) {
 		t.Errorf("Expected 3, got %d", db.indexes[1][0])
 	}
 
-	if len(db.all) != 1 {
-		t.Errorf("Expected 1, got %d", len(db.all))
+	if len(db.indexes[0]) != 1 {
+		t.Errorf("Expected 1, got %d", len(db.indexes[0]))
 	}
 
-	if db.all[0] != 3 {
-		t.Errorf("Expected 3, got %d", db.all[0])
+	if db.indexes[0][0] != 3 {
+		t.Errorf("Expected 3, got %d", db.indexes[0][0])
 	}
 }
 
@@ -107,7 +107,7 @@ func Test_indexValues(t *testing.T) {
 	db.Add(Item{ID: 2}, 2)
 	db.Add(Item{ID: 3}, 1)
 
-	res := db.indexValues([]uint64{5}) // 0000 0101
+	res := db.indexValues([]uint64{5}, nil) // 0000 0101
 
 	if len(res) != 2 {
 		t.Errorf("Expected 2, got %d", len(res))
@@ -126,7 +126,7 @@ func Test_indexValues_limit(t *testing.T) {
 	db := New[Item]()
 	db.Add(Item{ID: 1}, 1)
 
-	res := db.indexValues([]uint64{7}) // 0000 0111
+	res := db.indexValues([]uint64{7}, nil) // 0000 0111
 
 	if len(res) != 1 {
 		t.Errorf("Expected 1, got %d", len(res))
@@ -144,7 +144,7 @@ func TestIndex(t *testing.T) {
 	db.Add(Item{ID: 2}, 2)
 	db.Add(Item{ID: 3}, 1)
 
-	res := db.Index(1).Get()
+	res := db.Index(1).Get(nil)
 
 	if len(res) != 2 {
 		t.Errorf("Expected 2, got %d", len(res))

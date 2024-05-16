@@ -14,10 +14,10 @@ func TestResultAnd(t *testing.T) {
 	db.Add(Item{ID: 4}, 2)
 	db.Add(Item{ID: 5}, 3)
 
-	res := db.Index(1).And(2).Get()
+	res := db.Index(1).And(2).Get(nil)
 
 	if len(res) != 2 {
-		t.Errorf("Expected 2, got %d", len(res))
+		t.Fatalf("Expected 2, got %d", len(res))
 	}
 
 	if res[0].ID != 2 {
@@ -37,10 +37,10 @@ func TestResultOr(t *testing.T) {
 	db.Add(Item{ID: 4}, 2)
 	db.Add(Item{ID: 5}, 3)
 
-	res := db.Index(4).Or(3).Get()
+	res := db.Index(4).Or(3).Get(nil)
 
 	if len(res) != 2 {
-		t.Errorf("Expected 2, got %d", len(res))
+		t.Fatalf("Expected 2, got %d", len(res))
 	}
 
 	if res[0].ID != 3 {
@@ -61,10 +61,10 @@ func TestResultOr_secondIndexBig(t *testing.T) {
 	}
 	db.Add(Item{ID: 1000}, 3)
 
-	res := db.Index(1).Or(3).Get()
+	res := db.Index(1).Or(3).Get(nil)
 
 	if len(res) != 2 {
-		t.Errorf("Expected 2, got %d", len(res))
+		t.Fatalf("Expected 2, got %d", len(res))
 	}
 
 	if res[0].ID != 1 {
@@ -85,10 +85,10 @@ func TestAndNot_ManyItems(t *testing.T) {
 
 	db.Add(Item{ID: 1000}, 2)
 
-	res := db.All().AndNot(1).Get()
+	res := db.All().AndNot(1).Get(nil)
 
 	if len(res) != 1 {
-		t.Errorf("Expected 1, got %d", len(res))
+		t.Fatalf("Expected 1, got %d", len(res))
 	}
 
 	if res[0].ID != 1000 {
@@ -105,10 +105,10 @@ func TestResultOr_firstIndexBig(t *testing.T) {
 	}
 	db.Add(Item{ID: 1000}, 3)
 
-	res := db.Index(3).Or(1).Get()
+	res := db.Index(3).Or(1).Get(nil)
 
 	if len(res) != 2 {
-		t.Errorf("Expected 2, got %d", len(res))
+		t.Fatalf("Expected 2, got %d", len(res))
 	}
 
 	if res[0].ID != 1 {
@@ -128,10 +128,10 @@ func TestResultAndNot(t *testing.T) {
 	db.Add(Item{ID: 4}, 2)
 	db.Add(Item{ID: 5}, 3)
 
-	res := db.Index(1).AndNot(4).Get()
+	res := db.Index(1).AndNot(4).Get(nil)
 
 	if len(res) != 2 {
-		t.Errorf("Expected 2, got %d", len(res))
+		t.Fatalf("Expected 2, got %d", len(res))
 	}
 
 	if res[0].ID != 1 {
@@ -140,28 +140,5 @@ func TestResultAndNot(t *testing.T) {
 
 	if res[1].ID != 2 {
 		t.Errorf("Expected 2, got %d", res[1].ID)
-	}
-}
-
-func TestResultNot(t *testing.T) {
-	db := New[Item]()
-	db.Add(Item{ID: 1}, 1)
-	db.Add(Item{ID: 2}, 1, 2)
-	db.Add(Item{ID: 3}, 1, 2, 4)
-	db.Add(Item{ID: 4}, 2)
-	db.Add(Item{ID: 5}, 3)
-
-	res := db.Index(1).Not().Get()
-
-	if len(res) != 2 {
-		t.Errorf("Expected 2, got %d", len(res))
-	}
-
-	if res[0].ID != 4 {
-		t.Errorf("Expected 4, got %d", res[0].ID)
-	}
-
-	if res[1].ID != 5 {
-		t.Errorf("Expected 5, got %d", res[1].ID)
 	}
 }

@@ -61,10 +61,6 @@ func main() {
 	resultFemaleNotAdult := db.Index(indexFemale).AndNot(indexAdult)
 	defer db.ReleaseResult(resultFemaleNotAdult)
 	fmt.Printf("Female not adult: %v\n", resultFemaleNotAdult.Get())
-
-	resultNotAdult := db.Index(indexAdult).Not()
-	defer db.ReleaseResult(resultNotAdult)
-	fmt.Printf("Not adult:        %v\n", resultNotAdult.Get())
 }
 ```
 
@@ -77,6 +73,8 @@ db := bidb.New[User]()
 ```
 
 Add data to the database. You can add multiple indexes to the data.
+
+> Index with the value of 0 is reserved for all data.
 
 ```go
 db.Add(User{ID: 1, Name: "John"}, indexMale).
@@ -106,12 +104,11 @@ Methods `Index` and `All` returns a `Result` object. You can use the `Get` metho
 data := result.Get()
 ```
 
-You can also use the `And`, `Or`, `AndNot`, `Not` methods to combine indexes.
+You can also use the `And`, `Or`, `AndNot` methods to combine indexes.
 
 ```go
 resultMaleAdult := db.Index(indexMale).And(indexAdult)
 resultFemaleNotAdult := db.Index(indexFemale).AndNot(indexAdult)
-resultNotAdult := db.Index(indexAdult).Not()
 ```
 
 You should release the result when you are done with it.
@@ -119,6 +116,5 @@ You should release the result when you are done with it.
 ```go
 defer db.ReleaseResult(resultMaleAdult)
 defer db.ReleaseResult(resultFemaleNotAdult)
-defer db.ReleaseResult(resultNotAdult)
 ```
 
