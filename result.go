@@ -41,10 +41,13 @@ func (res *Result[T]) Get(dest []T) []T {
 	res.db.mx.RLock()
 	defer res.db.mx.RUnlock()
 
-	result, okSI := res.db.indexes[res.startIdx]
+	r, okSI := res.db.indexes[res.startIdx]
 	if !okSI {
 		return nil
 	}
+
+	result := make([]uint64, len(r))
+	copy(result, r)
 
 	if len(res.indexes) == 0 {
 		return res.db.indexValues(result, dest)
