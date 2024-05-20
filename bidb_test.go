@@ -82,22 +82,28 @@ func Test_setPos(t *testing.T) {
 
 	var v []uint64
 
-	v = db.setPos([]uint64{}, 0)
-	if v[0] != 1 { // 00000001
-		t.Errorf("Expected 1, got %d", v)
-	}
+	v = db.setPos([]uint64{0}, 0)
+	checkPos(t, v, []uint64{0x00_00_00_00_00_00_00_01})
 
-	v = db.setPos([]uint64{}, 5)
-	if v[0] != 32 { // 00100000
-		t.Errorf("Expected 32, got %v", v)
-	}
+	v = db.setPos([]uint64{0x00_00_00_00_00_00_00_01}, 5)
+	checkPos(t, v, []uint64{0x00_00_00_00_00_00_00_21})
 
-	v = db.setPos([]uint64{0}, 67)
-	if v[0] != 0 {
-		t.Errorf("Expected 0, got %v", v[0])
-	}
-	if v[1] != 8 {
-		t.Errorf("Expected 8, got %v", v[1])
+	v = db.setPos([]uint64{0}, 5)
+	checkPos(t, v, []uint64{0x00_00_00_00_00_00_00_20})
+
+	v = db.setPos([]uint64{0}, 63)
+	checkPos(t, v, []uint64{0x80_00_00_00_00_00_00_00})
+
+	v = db.setPos([]uint64{0}, 64)
+	checkPos(t, v, []uint64{0x00_00_00_00_00_00_00_00, 0x00_00_00_00_00_00_00_01})
+
+	v = db.setPos([]uint64{0}, 128)
+	checkPos(t, v, []uint64{0x00_00_00_00_00_00_00_00, 0x00_00_00_00_00_00_00_00, 0x00_00_00_00_00_00_00_01})
+}
+
+func checkPos(t *testing.T, v, expected []uint64) {
+	if !reflect.DeepEqual(v, expected) {
+		t.Fatalf("Expected %.16x, got %.16x", expected, v)
 	}
 }
 

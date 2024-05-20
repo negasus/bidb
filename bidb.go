@@ -78,19 +78,13 @@ func (db *DB[T]) Add(item T, indexes ...int) *DB[T] {
 }
 
 func (db *DB[T]) setPos(v []uint64, pos int) []uint64 {
-	group := pos / 63
-	if pos%63 == 0 && pos > 0 {
-		group--
-	}
+	group := pos / 64
 
 	if group >= len(v) {
 		v = append(v, make([]uint64, group-len(v)+1)...)
 	}
 
-	shift := pos
-	if group > 0 {
-		shift -= group*63 + 1
-	}
+	shift := pos - group*64
 
 	v[group] |= 1 << shift
 

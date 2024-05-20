@@ -6,6 +6,36 @@ type Item struct {
 	ID int
 }
 
+func checkExpect(t *testing.T, res []Item, expect []int) {
+	if len(res) != len(expect) {
+		t.Fatalf("Expected len %d, got %d", len(expect), len(res))
+	}
+
+	for i, v := range res {
+		if v.ID != expect[i] {
+			t.Errorf("Expected ID %d, got %d", expect[i], v.ID)
+		}
+	}
+}
+
+func TestResultAnd2(t *testing.T) {
+	db := New[Item]()
+
+	for i := 0; i < 150; i++ {
+		db.Add(Item{ID: 0}, 9)
+	}
+
+	db.Add(Item{ID: 1}, 1)
+	db.Add(Item{ID: 2}, 1, 2)
+	db.Add(Item{ID: 3}, 1, 2)
+	db.Add(Item{ID: 4}, 2)
+	db.Add(Item{ID: 5}, 3)
+
+	res := db.Index(1).And(2).Get(nil)
+
+	checkExpect(t, res, []int{2, 3})
+}
+
 func TestResultAnd(t *testing.T) {
 	db := New[Item]()
 	db.Add(Item{ID: 1}, 1)
