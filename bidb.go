@@ -77,6 +77,26 @@ func (db *DB[T]) Add(item T, indexes ...int) *DB[T] {
 	return db
 }
 
+// FillFrom fills the current database with data from another database
+func (db *DB[T]) FillFrom(src *DB[T]) {
+	// reset
+	db.mx.Lock()
+	defer db.mx.Unlock()
+
+	db.data = db.data[:0]
+	for k := range db.indexes {
+		delete(db.indexes, k)
+	}
+
+	// copy
+	for i := 0; i < len(src.data); i++ {
+		db.data = append(db.data, src.data[i])
+	}
+	for k, v := range src.indexes {
+		db.indexes[k] = v
+	}
+}
+
 func (db *DB[T]) setPos(v []uint64, pos int) []uint64 {
 	group := pos / 64
 
