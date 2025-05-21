@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.5.0 (2025-05-21)
+
+- add FillFrom method
+
 ## v0.4.0 (2024-05-20)
 
 - bugfix
